@@ -140,7 +140,7 @@ router.get("/dates", auth, (req, res) => {
 
   db.all(
     `
-    SELECT DISTINCT DATE(exercise_logs.timestamp) AS date
+    SELECT DISTINCT substr(exercise_logs.timestamp, 1, 10) AS date
     FROM exercise_logs
     JOIN exercises ON exercise_logs.exercise_id = exercises.id
     WHERE exercises.user_id = ?
@@ -152,5 +152,6 @@ router.get("/dates", auth, (req, res) => {
     }
   );
 });
+
 
 module.exports = router;
