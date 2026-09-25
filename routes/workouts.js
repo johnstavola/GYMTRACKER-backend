@@ -22,8 +22,11 @@ function auth(req, res, next) {
 // ADD LOG
 // -------------------------
 router.post("/log", auth, (req, res) => {
-  const { name, weight, reps } = req.body;
+  let { name, weight, reps } = req.body;
   const userId = req.user.id;
+
+  // Normalize name (case-insensitive)
+  name = name.trim().toLowerCase();
 
   // Step 1: check if exercise exists
   db.get(
@@ -80,7 +83,9 @@ router.get("/exercises", auth, (req, res) => {
 // -------------------------
 router.get("/history/:name", auth, (req, res) => {
   const userId = req.user.id;
-  const name = req.params.name;
+
+  // Normalize name (case-insensitive)
+  const name = req.params.name.toLowerCase();
 
   // Find the exercise for this user
   db.get(
