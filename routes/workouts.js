@@ -58,7 +58,7 @@ router.post("/log", auth, (req, res) => {
 });
 
 // -------------------------
-// GET EXERCISES (last logged set)
+// GET EXERCISES (last logged set + timestamp)
 // -------------------------
 router.get("/exercises", auth, (req, res) => {
   const userId = req.user.id;
@@ -67,7 +67,8 @@ router.get("/exercises", auth, (req, res) => {
     `
     SELECT exercises.name,
            (SELECT weight FROM exercise_logs WHERE exercise_id = exercises.id ORDER BY id DESC LIMIT 1) AS last_weight,
-           (SELECT reps FROM exercise_logs WHERE exercise_id = exercises.id ORDER BY id DESC LIMIT 1) AS last_reps
+           (SELECT reps FROM exercise_logs WHERE exercise_id = exercises.id ORDER BY id DESC LIMIT 1) AS last_reps,
+           (SELECT timestamp FROM exercise_logs WHERE exercise_id = exercises.id ORDER BY id DESC LIMIT 1) AS last_timestamp
     FROM exercises
     WHERE user_id = ?
     `,
@@ -104,6 +105,29 @@ router.get("/history/:name", auth, (req, res) => {
           res.json(logs);
         }
       );
+    }
+  );
+});
+
+// -------------------------
+// GET ALL LOGS FOR A SPECIFIC DAY
+// -------------------------
+router.get("/day/:date", auth, (req, res) => {
+  const userId = req.user.id;
+  const date = req.params.date; // format: YYYY-MM-DD
+
+  db.all(
+    `
+    SELECT exercises.name, exercise_logs.weight, exercise_logs.reps, exercise_logs.timestamp
+    FROM exercise_logs
+    JOIN exercises ON exercise_logs.exercise_id = exercises.id
+    WHERE exercises.user_id = ?
+      AND DATE(exercise_logs.timestamp) = ?
+    ORDER BY exercise_logs.timestamp DESC
+    `,
+    [userId, date],
+    (err, rows) => {
+      res.json(rows);
     }
   );
 });
