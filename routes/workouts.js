@@ -132,4 +132,25 @@ router.get("/day/:date", auth, (req, res) => {
   );
 });
 
+// -------------------------
+// GET ALL UNIQUE WORKOUT DATES
+// -------------------------
+router.get("/dates", auth, (req, res) => {
+  const userId = req.user.id;
+
+  db.all(
+    `
+    SELECT DISTINCT DATE(exercise_logs.timestamp) AS date
+    FROM exercise_logs
+    JOIN exercises ON exercise_logs.exercise_id = exercises.id
+    WHERE exercises.user_id = ?
+    ORDER BY date DESC
+    `,
+    [userId],
+    (err, rows) => {
+      res.json(rows);
+    }
+  );
+});
+
 module.exports = router;
