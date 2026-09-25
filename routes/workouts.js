@@ -18,7 +18,9 @@ function auth(req, res, next) {
   }
 }
 
+// -------------------------
 // ADD LOG
+// -------------------------
 router.post("/log", auth, (req, res) => {
   const { name, weight, reps } = req.body;
   const userId = req.user.id;
@@ -52,7 +54,9 @@ router.post("/log", auth, (req, res) => {
   }
 });
 
-// GET EXERCISES
+// -------------------------
+// GET EXERCISES (last logged set)
+// -------------------------
 router.get("/exercises", auth, (req, res) => {
   const userId = req.user.id;
 
@@ -67,6 +71,34 @@ router.get("/exercises", auth, (req, res) => {
     [userId],
     (err, rows) => {
       res.json(rows);
+    }
+  );
+});
+
+// -------------------------
+// GET FULL HISTORY FOR A LIFT
+// -------------------------
+router.get("/history/:name", auth, (req, res) => {
+  const userId = req.user.id;
+  const name = req.params.name;
+
+  // Find the exercise for this user
+  db.get(
+    "SELECT id FROM exercises WHERE user_id = ? AND name = ?",
+    [userId, name],
+    (err, exercise) => {
+      if (!exercise) {
+        return res.json([]);
+      }
+
+      // Get full history sorted newest → oldest
+      db.all(
+        "SELECT weight, reps, timestamp FROM exercise_logs WHERE exercise_id = ? ORDER BY timestamp DESC",
+        [exercise.id],
+        (err, logs) => {
+          res.json(logs);
+        }
+      );
     }
   );
 });
