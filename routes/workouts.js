@@ -18,7 +18,6 @@ async function verifyToken(req, res, next) {
 router.post("/log", verifyToken, async (req, res) => {
   const { name, weight, reps } = req.body;
 
-  // ✅ Convert to numbers to avoid empty‑string errors
   const w = Number(weight);
   const r = Number(reps);
 
@@ -33,14 +32,12 @@ router.post("/log", verifyToken, async (req, res) => {
     });
 
   if (error) {
-    console.log("SUPABASE INSERT ERROR:", error); // keep this for debugging
+    console.log("SUPABASE INSERT ERROR:", error);
     return res.status(400).json({ error: error.message });
   }
 
   res.json({ success: true });
 });
-
-
 
 // GET EXERCISES
 router.get("/exercises", verifyToken, async (req, res) => {
@@ -68,4 +65,25 @@ router.get("/dates", verifyToken, async (req, res) => {
   res.json(uniqueDates.map(date => ({ date })));
 });
 
+// GET WORKOUTS FOR A SPECIFIC DAY
+router.get("/day/:date", verifyToken, async (req, res) => {
+  const userId = req.user.id;
+  const date = req.params.date;
+
+  const { data, error } = await supabase
+    .from("workouts")
+    .select("*")
+    .eq("user_id", userId)
+    .gte("created_at", `${date}T00:00:00`)
+    .lte("created_at", `${date}T23:59:59`);
+
+  if (error) {
+    console.log("SUPABASE DAY FETCH ERROR:", error);
+    return res.status(400).json({ error: error.message });
+  }
+
+  res.json(data);
+});
+
+// IMPORTANT: EXPORT AT THE VERY END
 module.exports = router;
