@@ -55,7 +55,6 @@ router.get("/dates", verifyToken, async (req, res) => {
   if (error) return res.status(400).json({ error: error.message });
 
   const uniqueDates = [...new Set(data.map(log => log.timestamp.split("T")[0]))];
-
   res.json(uniqueDates.map(date => ({ date })));
 });
 
