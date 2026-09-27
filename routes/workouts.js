@@ -46,3 +46,21 @@ router.get("/exercises", verifyToken, async (req, res) => {
 });
 
 module.exports = router;
+
+// GET WORKOUT DATES
+router.get("/dates", auth, async (req, res) => {
+  const userId = req.user.id;
+
+  const { data, error } = await supabase
+    .from("exercise_logs")
+    .select("timestamp")
+    .eq("user_id", userId)
+    .order("timestamp", { ascending: false });
+
+  if (error) return res.status(400).json({ error: error.message });
+
+  // Extract unique dates
+  const uniqueDates = [...new Set(data.map(log => log.timestamp.split("T")[0]))];
+
+  res.json(uniqueDates.map(date => ({ date })));
+});
