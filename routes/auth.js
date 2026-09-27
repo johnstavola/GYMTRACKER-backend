@@ -1,61 +1,64 @@
 const express = require("express");
 const router = express.Router();
+const db = require("../db");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const supabase = require("../db");
 
-// Verify Supabase token
-async function verifyToken(req, res, next) {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ error: "Missing token" });
+const SECRET = "supersecretkey"; // replace later
+const router = express.Router();
 
-  const { data, error } = await supabase.auth.getUser(token);
-  if (error || !data.user) return res.status(401).json({ error: "Invalid token" });
+// REGISTER
+router.post("/register", (req, res) => {
+// LOGIN
+router.post("/login", async (req, res) => {
+  const { username, password } = req.body;
 
-  req.user = data.user;
-  next();
-}
+  const hash = bcrypt.hashSync(password, 10);
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: username,
+    password
+  });
 
-// ADD LOG
-router.post("/log", verifyToken, async (req, res) => {
-  const { name, weight, reps } = req.body;
+  if (error || !data.session) {
+    return res.status(401).json({ error: "Invalid login" });
+  }
 
-  const { error } = await supabase
-    .from("workouts") // ✅ correct table name
-    .insert({
-      user_id: req.user.id,
-      name, // ✅ correct column name
-      weight,
-      reps,
-      created_at: new Date().toISOString() // ✅ correct column name
-    });
-
-  if (error) return res.status(400).json({ error: error.message });
-  res.json({ success: true });
+  db.run(
+    "INSERT INTO users (username, password_hash) VALUES (?, ?)",
+    [username, hash],
+    function (err) {
+      if (err) return res.json({ success: false, error: err.message });
+      res.json({ success: true });
+    }
+  );
+  return res.json({ token: data.session.access_token });
 });
 
-// GET EXERCISES
-router.get("/exercises", verifyToken, async (req, res) => {
-  const { data, error } = await supabase
-    .from("workouts") // ✅ correct table name
-    .select("name, weight, reps, created_at") // ✅ correct column names
-    .eq("user_id", req.user.id)
-    .order("created_at", { ascending: false });
+// LOGIN
+router.post("/login", (req, res) => {
+// REGISTER
+router.post("/register", async (req, res) => {
+  const { username, password } = req.body;
 
-  if (error) return res.status(400).json({ error: error.message });
-  res.json(data);
-});
+  db.get("SELECT * FROM users WHERE username = ?", [username], (err, user) => {
+    if (!user) return res.json({ error: "Invalid login" });
 
-// GET WORKOUT DATES
-router.get("/dates", verifyToken, async (req, res) => {
-  const { data, error } = await supabase
-    .from("workouts") // ✅ correct table name
-    .select("created_at") // ✅ correct column name
-    .eq("user_id", req.user.id)
-    .order("created_at", { ascending: false });
+    const valid = bcrypt.compareSync(password, user.password_hash);
+    if (!valid) return res.json({ error: "Invalid login" });
+  const { data, error } = await supabase.auth.signUp({
+    email: username,
+    password
+  });
 
-  if (error) return res.status(400).json({ error: error.message });
+    const token = jwt.sign({ id: user.id }, SECRET, { expiresIn: "7d" });
+  if (error) {
+    return res.status(400).json({ success: false, error: error.message });
+  }
 
-  const uniqueDates = [...new Set(data.map(log => log.created_at.split("T")[0]))];
-  res.json(uniqueDates.map(date => ({ date })));
+    res.json({ token });
+  });
+  return res.json({ success: true });
 });
 
 module.exports = router;
