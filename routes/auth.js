@@ -1,41 +1,38 @@
 const express = require("express");
+const supabase = require("../db");
+
 const router = express.Router();
-const db = require("../db");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-
-const SECRET = "supersecretkey"; // replace later
-
-// REGISTER
-router.post("/register", (req, res) => {
-  const { username, password } = req.body;
-
-  const hash = bcrypt.hashSync(password, 10);
-
-  db.run(
-    "INSERT INTO users (username, password_hash) VALUES (?, ?)",
-    [username, hash],
-    function (err) {
-      if (err) return res.json({ success: false, error: err.message });
-      res.json({ success: true });
-    }
-  );
-});
 
 // LOGIN
-router.post("/login", (req, res) => {
+router.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
-  db.get("SELECT * FROM users WHERE username = ?", [username], (err, user) => {
-    if (!user) return res.json({ error: "Invalid login" });
-
-    const valid = bcrypt.compareSync(password, user.password_hash);
-    if (!valid) return res.json({ error: "Invalid login" });
-
-    const token = jwt.sign({ id: user.id }, SECRET, { expiresIn: "7d" });
-
-    res.json({ token });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: username,
+    password
   });
+
+  if (error || !data.session) {
+    return res.status(401).json({ error: "Invalid login" });
+  }
+
+  return res.json({ token: data.session.access_token });
+});
+
+// REGISTER
+router.post("/register", async (req, res) => {
+  const { username, password } = req.body;
+
+  const { data, error } = await supabase.auth.signUp({
+    email: username,
+    password
+  });
+
+  if (error) {
+    return res.status(400).json({ success: false, error: error.message });
+  }
+
+  return res.json({ success: true });
 });
 
 module.exports = router;
