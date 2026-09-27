@@ -1,74 +1,48 @@
 const express = require("express");
+const supabase = require("../db");
+
 const router = express.Router();
-const db = require("../db");
-const jwt = require("jsonwebtoken");
 
-const SECRET = "supersecretkey";
+// Middleware: verify Supabase token
+async function verifyToken(req, res, next) {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "Missing token" });
 
-// Middleware: authenticate user
-function auth(req, res, next) {
-  const token = req.headers.authorization;
-  if (!token) return res.json({ error: "No token" });
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data.user) return res.status(401).json({ error: "Invalid token" });
 
-  try {
-    req.user = jwt.verify(token, SECRET);
-    next();
-  } catch {
-    res.json({ error: "Invalid token" });
-  }
+  req.user = data.user;
+  next();
 }
 
 // ADD LOG
-router.post("/log", auth, (req, res) => {
+router.post("/log", verifyToken, async (req, res) => {
   const { name, weight, reps } = req.body;
-  const userId = req.user.id;
 
-  // Step 1: check if exercise exists
-  db.get(
-    "SELECT * FROM exercises WHERE user_id = ? AND name = ?",
-    [userId, name],
-    (err, exercise) => {
-      if (!exercise) {
-        // Create exercise
-        db.run(
-          "INSERT INTO exercises (user_id, name) VALUES (?, ?)",
-          [userId, name],
-          function () {
-            insertLog(this.lastID);
-          }
-        );
-      } else {
-        insertLog(exercise.id);
-      }
-    }
-  );
+  const { data, error } = await supabase
+    .from("exercise_logs")
+    .insert({
+      user_id: req.user.id,
+      exercise: name,
+      weight,
+      reps,
+      timestamp: new Date().toISOString()
+    });
 
-  function insertLog(exerciseId) {
-    db.run(
-      "INSERT INTO exercise_logs (exercise_id, weight, reps, timestamp) VALUES (?, ?, ?, datetime('now'))",
-      [exerciseId, weight, reps],
-      () => res.json({ success: true })
-    );
-  }
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ success: true });
 });
 
-// GET EXERCISES
-router.get("/exercises", auth, (req, res) => {
-  const userId = req.user.id;
+// GET EXERCISES (last logged set)
+router.get("/exercises", verifyToken, async (req, res) => {
+  const { data, error } = await supabase
+    .from("exercise_logs")
+    .select("exercise, weight, reps")
+    .eq("user_id", req.user.id)
+    .order("timestamp", { ascending: false });
 
-  db.all(
-    `
-    SELECT exercises.name,
-           (SELECT weight FROM exercise_logs WHERE exercise_id = exercises.id ORDER BY id DESC LIMIT 1) AS last_weight,
-           (SELECT reps FROM exercise_logs WHERE exercise_id = exercises.id ORDER BY id DESC LIMIT 1) AS last_reps
-    FROM exercises
-    WHERE user_id = ?
-    `,
-    [userId],
-    (err, rows) => {
-      res.json(rows);
-    }
-  );
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
 });
 
 module.exports = router;
