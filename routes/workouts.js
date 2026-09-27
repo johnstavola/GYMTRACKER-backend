@@ -28,9 +28,14 @@ router.post("/log", verifyToken, async (req, res) => {
       created_at: new Date().toISOString()
     });
 
-  if (error) return res.status(400).json({ error: error.message });
+  if (error) {
+    console.log("SUPABASE INSERT ERROR:", error);   // <-- ADDED THIS
+    return res.status(400).json({ error: error.message });
+  }
+
   res.json({ success: true });
 });
+
 
 // GET EXERCISES
 router.get("/exercises", verifyToken, async (req, res) => {
