@@ -18,23 +18,28 @@ async function verifyToken(req, res, next) {
 router.post("/log", verifyToken, async (req, res) => {
   const { name, weight, reps } = req.body;
 
+  // ✅ Convert to numbers to avoid empty‑string errors
+  const w = Number(weight);
+  const r = Number(reps);
+
   const { error } = await supabase
     .from("workouts")
     .insert({
       user_id: req.user.id,
       name,
-      weight,
-      reps,
+      weight: w,
+      reps: r,
       created_at: new Date().toISOString()
     });
 
   if (error) {
-    console.log("SUPABASE INSERT ERROR:", error);   // <-- ADDED THIS
+    console.log("SUPABASE INSERT ERROR:", error); // keep this for debugging
     return res.status(400).json({ error: error.message });
   }
 
   res.json({ success: true });
 });
+
 
 
 // GET EXERCISES
