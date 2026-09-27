@@ -4,7 +4,7 @@ const db = require("../db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
-const SECRET = process.env.JWT_SECRET; // secure secret key
+const SECRET = "supersecretkey"; // replace later
 
 // REGISTER
 router.post("/register", (req, res) => {
@@ -32,7 +32,7 @@ router.post("/login", (req, res) => {
     const valid = bcrypt.compareSync(password, user.password_hash);
     if (!valid) return res.json({ error: "Invalid login" });
 
-    const token = jwt.sign({ id: user.id }, SECRET, { expiresIn: "30m" });
+    const token = jwt.sign({ id: user.id }, SECRET, { expiresIn: "7d" });
 
     res.json({ token });
   });
