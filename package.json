@@ -7,15 +7,13 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "bcrypt": "^5.1.1",
-    "cors": "^2.8.6",
     "express": "^4.22.3",
-    "jsonwebtoken": "^9.0.3",
-    "sqlite3": "^5.1.7"
+    "cors": "^2.8.6",
+    "dotenv": "^16.4.5",
+    "@supabase/supabase-js": "^2.45.0"
   },
   "description": "",
   "keywords": [],
   "author": "",
-  "license": "ISC",
-  "devDependencies": {}
+  "license": "ISC"
 }
