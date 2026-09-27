@@ -4,7 +4,7 @@ const db = require("../db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
-const SECRET = "supersecretkey"; // replace later
+const SECRET = process.env.JWT_SECRET; // secure secret key
 
 // REGISTER
 router.post("/register", (req, res) => {
