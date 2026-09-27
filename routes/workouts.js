@@ -19,13 +19,13 @@ router.post("/log", verifyToken, async (req, res) => {
   const { name, weight, reps } = req.body;
 
   const { error } = await supabase
-    .from("workouts") // ✅ correct table name
+    .from("workouts")
     .insert({
       user_id: req.user.id,
-      name, // ✅ correct column name
+      name,
       weight,
       reps,
-      created_at: new Date().toISOString() // ✅ correct column name
+      created_at: new Date().toISOString()
     });
 
   if (error) return res.status(400).json({ error: error.message });
@@ -35,8 +35,8 @@ router.post("/log", verifyToken, async (req, res) => {
 // GET EXERCISES
 router.get("/exercises", verifyToken, async (req, res) => {
   const { data, error } = await supabase
-    .from("workouts") // ✅ correct table name
-    .select("name, weight, reps, created_at") // ✅ correct column names
+    .from("workouts")
+    .select("name, weight, reps, created_at")
     .eq("user_id", req.user.id)
     .order("created_at", { ascending: false });
 
@@ -47,8 +47,8 @@ router.get("/exercises", verifyToken, async (req, res) => {
 // GET WORKOUT DATES
 router.get("/dates", verifyToken, async (req, res) => {
   const { data, error } = await supabase
-    .from("workouts") // ✅ correct table name
-    .select("created_at") // ✅ correct column name
+    .from("workouts")
+    .select("created_at")
     .eq("user_id", req.user.id)
     .order("created_at", { ascending: false });
 
