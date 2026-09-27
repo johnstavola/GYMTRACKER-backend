@@ -32,7 +32,7 @@ router.post("/login", (req, res) => {
     const valid = bcrypt.compareSync(password, user.password_hash);
     if (!valid) return res.json({ error: "Invalid login" });
 
-    const token = jwt.sign({ id: user.id }, SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ id: user.id }, SECRET, { expiresIn: "30m" });
 
     res.json({ token });
   });
