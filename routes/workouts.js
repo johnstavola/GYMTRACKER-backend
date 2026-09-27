@@ -1,10 +1,8 @@
-const auth = require("../middleware/auth");
 const express = require("express");
+const router = express.Router();
 const supabase = require("../db");
 
-const router = express.Router();
-
-// Middleware: verify Supabase token
+// Verify Supabase token
 async function verifyToken(req, res, next) {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) return res.status(401).json({ error: "Missing token" });
@@ -20,7 +18,7 @@ async function verifyToken(req, res, next) {
 router.post("/log", verifyToken, async (req, res) => {
   const { name, weight, reps } = req.body;
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("exercise_logs")
     .insert({
       user_id: req.user.id,
@@ -34,11 +32,11 @@ router.post("/log", verifyToken, async (req, res) => {
   res.json({ success: true });
 });
 
-// GET EXERCISES (last logged set)
+// GET EXERCISES
 router.get("/exercises", verifyToken, async (req, res) => {
   const { data, error } = await supabase
     .from("exercise_logs")
-    .select("exercise, weight, reps")
+    .select("exercise, weight, reps, timestamp")
     .eq("user_id", req.user.id)
     .order("timestamp", { ascending: false });
 
@@ -46,22 +44,19 @@ router.get("/exercises", verifyToken, async (req, res) => {
   res.json(data);
 });
 
-module.exports = router;
-
 // GET WORKOUT DATES
-router.get("/dates", auth, async (req, res) => {
-  const userId = req.user.id;
-
+router.get("/dates", verifyToken, async (req, res) => {
   const { data, error } = await supabase
     .from("exercise_logs")
     .select("timestamp")
-    .eq("user_id", userId)
+    .eq("user_id", req.user.id)
     .order("timestamp", { ascending: false });
 
   if (error) return res.status(400).json({ error: error.message });
 
-  // Extract unique dates
   const uniqueDates = [...new Set(data.map(log => log.timestamp.split("T")[0]))];
 
   res.json(uniqueDates.map(date => ({ date })));
 });
+
+module.exports = router;
