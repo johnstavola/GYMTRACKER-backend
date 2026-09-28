@@ -124,9 +124,13 @@ router.get("/exercises", verifyToken, async (req, res) => {
 
   if (error) return res.status(400).json({ error: error.message });
 
-  // Extract unique names AND flatten to strings
-  const unique = [...new Set(data.map(x => x.name))];
+  // Convert objects → strings
+  const names = data.map(row => row.name);
+
+  // Remove duplicates
+  const unique = [...new Set(names)];
 
   res.json(unique);
 });
+
 
