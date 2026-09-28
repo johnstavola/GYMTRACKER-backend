@@ -28,7 +28,7 @@ router.post("/log", verifyToken, async (req, res) => {
       name,
       weight: w,
       reps: r,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString()   // UTC (fine)
     });
 
   if (error) {
@@ -65,7 +65,7 @@ router.get("/dates", verifyToken, async (req, res) => {
   res.json(uniqueDates.map(date => ({ date })));
 });
 
-// GET WORKOUTS FOR A SPECIFIC DAY
+// GET WORKOUTS FOR A SPECIFIC DAY (FIXED)
 router.get("/day/:date", verifyToken, async (req, res) => {
   const userId = req.user.id;
   const date = req.params.date;
@@ -74,8 +74,7 @@ router.get("/day/:date", verifyToken, async (req, res) => {
     .from("workouts")
     .select("*")
     .eq("user_id", userId)
-    .gte("created_at", `${date}T00:00:00`)
-    .lte("created_at", `${date}T23:59:59`);
+    .eq("created_at::date", date);   // ⭐ FIX: timezone-safe date comparison
 
   if (error) {
     console.log("SUPABASE DAY FETCH ERROR:", error);
