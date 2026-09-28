@@ -39,7 +39,7 @@ router.post("/log", verifyToken, async (req, res) => {
   res.json({ success: true });
 });
 
-// GET UNIQUE EXERCISE NAMES (CORRECT ROUTE)
+// GET UNIQUE EXERCISE NAMES
 router.get("/exercises", verifyToken, async (req, res) => {
   const { data, error } = await supabase
     .from("workouts")
@@ -98,9 +98,13 @@ router.get("/day/:date", verifyToken, async (req, res) => {
 
 // DELETE A LOGGED WORKOUT
 router.delete("/log/:id", verifyToken, async (req, res) => {
-  console.log("DELETE HIT:", req.params.id);
+  const logId = Number(req.params.id);
 
-  const logId = req.params.id;
+  console.log("DELETE HIT:", logId);
+
+  if (!logId) {
+    return res.status(400).json({ error: "Invalid log ID" });
+  }
 
   const { error } = await supabase
     .from("workouts")
