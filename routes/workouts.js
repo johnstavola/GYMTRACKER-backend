@@ -39,16 +39,19 @@ router.post("/log", verifyToken, async (req, res) => {
   res.json({ success: true });
 });
 
-// GET EXERCISES
+// GET UNIQUE EXERCISE NAMES (CORRECT ROUTE)
 router.get("/exercises", verifyToken, async (req, res) => {
   const { data, error } = await supabase
     .from("workouts")
-    .select("name, weight, reps, created_at")
-    .eq("user_id", req.user.id)
-    .order("created_at", { ascending: false });
+    .select("name")
+    .eq("user_id", req.user.id);
 
   if (error) return res.status(400).json({ error: error.message });
-  res.json(data);
+
+  const names = data.map(row => row.name);
+  const unique = [...new Set(names)];
+
+  res.json(unique);
 });
 
 // GET WORKOUT DATES
@@ -65,14 +68,13 @@ router.get("/dates", verifyToken, async (req, res) => {
     ...new Set(
       data.map(log => {
         const d = new Date(log.created_at);
-        return d.toLocaleDateString("sv-SE"); // YYYY-MM-DD in YOUR timezone
+        return d.toLocaleDateString("sv-SE");
       })
     )
   ];
 
   res.json(uniqueDates.map(date => ({ date })));
 });
-
 
 // GET WORKOUTS FOR A SPECIFIC DAY
 router.get("/day/:date", verifyToken, async (req, res) => {
@@ -94,8 +96,6 @@ router.get("/day/:date", verifyToken, async (req, res) => {
   res.json(data);
 });
 
-// IMPORTANT: EXPORT AT THE VERY END
-module.exports = router;
 // DELETE A LOGGED WORKOUT
 router.delete("/log/:id", verifyToken, async (req, res) => {
   console.log("DELETE HIT:", req.params.id);
@@ -115,22 +115,5 @@ router.delete("/log/:id", verifyToken, async (req, res) => {
 
   res.json({ success: true });
 });
-// GET UNIQUE EXERCISE NAMES
-router.get("/exercises", verifyToken, async (req, res) => {
-  const { data, error } = await supabase
-    .from("workouts")
-    .select("name")
-    .eq("user_id", req.user.id);
 
-  if (error) return res.status(400).json({ error: error.message });
-
-  // Convert objects → strings
-  const names = data.map(row => row.name);
-
-  // Remove duplicates
-  const unique = [...new Set(names)];
-
-  res.json(unique);
-});
-
-
+module.exports = router;
