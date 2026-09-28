@@ -28,7 +28,7 @@ router.post("/log", verifyToken, async (req, res) => {
       name,
       weight: w,
       reps: r,
-      created_at: new Date().toISOString()   // UTC (fine)
+      created_at: new Date().toISOString()
     });
 
   if (error) {
@@ -61,21 +61,11 @@ router.get("/dates", verifyToken, async (req, res) => {
 
   if (error) return res.status(400).json({ error: error.message });
 
-  // Convert UTC timestamps to local YYYY-MM-DD
-  const uniqueDates = [
-    ...new Set(
-      data.map(log => {
-        const d = new Date(log.created_at);
-        return d.toLocaleDateString("sv-SE"); // YYYY-MM-DD in local timezone
-      })
-    )
-  ];
-
+  const uniqueDates = [...new Set(data.map(log => log.created_at.split("T")[0]))];
   res.json(uniqueDates.map(date => ({ date })));
 });
 
-
-// GET WORKOUTS FOR A SPECIFIC DAY (FIXED)
+// GET WORKOUTS FOR A SPECIFIC DAY
 router.get("/day/:date", verifyToken, async (req, res) => {
   const userId = req.user.id;
   const date = req.params.date;
@@ -84,7 +74,8 @@ router.get("/day/:date", verifyToken, async (req, res) => {
     .from("workouts")
     .select("*")
     .eq("user_id", userId)
-    .eq("created_at::date", date);   // ⭐ FIX: timezone-safe date comparison
+    .gte("created_at", `${date}T00:00:00`)
+    .lte("created_at", `${date}T23:59:59`);
 
   if (error) {
     console.log("SUPABASE DAY FETCH ERROR:", error);
