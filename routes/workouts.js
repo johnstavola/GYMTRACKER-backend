@@ -98,13 +98,15 @@ router.get("/day/:date", verifyToken, async (req, res) => {
 module.exports = router;
 // DELETE A LOGGED WORKOUT
 router.delete("/log/:id", verifyToken, async (req, res) => {
+  console.log("DELETE HIT:", req.params.id);
+
   const logId = req.params.id;
 
   const { error } = await supabase
     .from("workouts")
     .delete()
     .eq("id", logId)
-    .eq("user_id", req.user.id); // extra safety
+    .eq("user_id", req.user.id);
 
   if (error) {
     console.log("SUPABASE DELETE ERROR:", error);
