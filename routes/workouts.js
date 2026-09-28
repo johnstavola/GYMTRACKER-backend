@@ -115,3 +115,17 @@ router.delete("/log/:id", verifyToken, async (req, res) => {
 
   res.json({ success: true });
 });
+// GET UNIQUE EXERCISE NAMES
+router.get("/exercises", verifyToken, async (req, res) => {
+  const { data, error } = await supabase
+    .from("workouts")
+    .select("name")
+    .eq("user_id", req.user.id);
+
+  if (error) return res.status(400).json({ error: error.message });
+
+  // Extract unique names
+  const unique = [...new Set(data.map(x => x.name))];
+
+  res.json(unique);
+});
