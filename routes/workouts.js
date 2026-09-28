@@ -14,12 +14,14 @@ async function verifyToken(req, res, next) {
   next();
 }
 
-// ADD LOG
+// ADD LOG (store local NY time)
 router.post("/log", verifyToken, async (req, res) => {
   const { name, weight, reps } = req.body;
-
   const w = Number(weight);
   const r = Number(reps);
+
+  // Local timestamp in America/New_York
+  const localTimestamp = new Date().toLocaleString("sv-SE", { timeZone: "America/New_York" });
 
   const { error } = await supabase
     .from("workouts")
@@ -28,7 +30,7 @@ router.post("/log", verifyToken, async (req, res) => {
       name,
       weight: w,
       reps: r,
-      created_at: new Date().toISOString()
+      created_at: localTimestamp
     });
 
   if (error) {
@@ -51,7 +53,7 @@ router.get("/exercises", verifyToken, async (req, res) => {
   res.json(data);
 });
 
-// GET WORKOUT DATES
+// GET WORKOUT DATES (convert UTC → local)
 router.get("/dates", verifyToken, async (req, res) => {
   const { data, error } = await supabase
     .from("workouts")
@@ -65,7 +67,7 @@ router.get("/dates", verifyToken, async (req, res) => {
     ...new Set(
       data.map(log => {
         const d = new Date(log.created_at);
-        return d.toLocaleDateString("sv-SE"); // YYYY-MM-DD in YOUR timezone
+        return d.toLocaleDateString("sv-SE", { timeZone: "America/New_York" }); // YYYY-MM-DD local
       })
     )
   ];
@@ -73,8 +75,7 @@ router.get("/dates", verifyToken, async (req, res) => {
   res.json(uniqueDates.map(date => ({ date })));
 });
 
-
-// GET WORKOUTS FOR A SPECIFIC DAY
+// GET WORKOUTS FOR A SPECIFIC DAY (timezone-safe)
 router.get("/day/:date", verifyToken, async (req, res) => {
   const userId = req.user.id;
   const date = req.params.date;
@@ -83,8 +84,7 @@ router.get("/day/:date", verifyToken, async (req, res) => {
     .from("workouts")
     .select("*")
     .eq("user_id", userId)
-    .gte("created_at", `${date}T00:00:00`)
-    .lte("created_at", `${date}T23:59:59`);
+    .eq("created_at::date", date); // compare by date only
 
   if (error) {
     console.log("SUPABASE DAY FETCH ERROR:", error);
