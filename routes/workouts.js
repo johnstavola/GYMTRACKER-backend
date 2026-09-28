@@ -61,9 +61,19 @@ router.get("/dates", verifyToken, async (req, res) => {
 
   if (error) return res.status(400).json({ error: error.message });
 
-  const uniqueDates = [...new Set(data.map(log => log.created_at.split("T")[0]))];
+  // Convert UTC timestamps to local YYYY-MM-DD
+  const uniqueDates = [
+    ...new Set(
+      data.map(log => {
+        const d = new Date(log.created_at);
+        return d.toLocaleDateString("sv-SE"); // YYYY-MM-DD in local timezone
+      })
+    )
+  ];
+
   res.json(uniqueDates.map(date => ({ date })));
 });
+
 
 // GET WORKOUTS FOR A SPECIFIC DAY (FIXED)
 router.get("/day/:date", verifyToken, async (req, res) => {
