@@ -27,11 +27,13 @@ router.post("/register", async (req, res) => {
     password
   });
 
-  if (error) {
-    return res.status(400).json({ success: false, error: error.message });
-  }
+  if (error) return res.status(400).json({ error: error.message });
 
-  return res.json({ success: true });
+  // Insert into profiles table
+  await supabase.from("profiles").insert({
+    id: data.user.id,
+    email: username
+  });
+
+  res.json({ success: true });
 });
-
-module.exports = router;
