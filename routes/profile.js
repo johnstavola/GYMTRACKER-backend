@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const supabase = require("../db");
-const verifyToken = require("../middleware/verifyToken");
+const verifyToken = require("../middleware/auth");
 
 router.post("/settings", verifyToken, async (req, res) => {
   const { button_color, background_color } = req.body;
