@@ -6,9 +6,11 @@ const cors = require("cors");
 app.use(cors());
 app.use(express.json());
 
+
 // Routes
 app.use("/api", require("./routes/auth"));
 app.use("/api", require("./routes/workouts"));
+app.use("/profile", require("./routes/profile"));
 
 // REQUIRED for Render:
 const PORT = process.env.PORT || 3000;
