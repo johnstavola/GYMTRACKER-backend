@@ -32,7 +32,7 @@ router.post("/register", async (req, res) => {
   // Insert into profiles table
   await supabase.from("profiles").insert({
     id: data.user.id,
-    email: username
+    username: username
   });
 
   res.json({ success: true });
