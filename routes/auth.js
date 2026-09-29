@@ -22,8 +22,9 @@ router.post("/login", async (req, res) => {
 router.post("/register", async (req, res) => {
   const { username, password } = req.body;
 
+  // ⭐ FIXED: must use email, not username
   const { data, error } = await supabase.auth.signUp({
-    username: username,
+    email: username,
     password
   });
 
@@ -37,3 +38,5 @@ router.post("/register", async (req, res) => {
 
   res.json({ success: true });
 });
+
+module.exports = router;
